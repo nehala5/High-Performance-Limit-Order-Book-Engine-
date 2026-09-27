@@ -18,10 +18,12 @@ enum class OrderStatus : uint8_t {
 using OrderId   = uint64_t;
 using Price     = double;
 using Quantity  = uint64_t;
+using SeqNum    = uint64_t;
 using Timestamp = std::chrono::steady_clock::time_point;
 
 struct Order {
     OrderId     id;
+    SeqNum      seq;
     OrderSide   side;
     OrderType   type;
     OrderStatus status;
@@ -32,6 +34,17 @@ struct Order {
 
     Quantity remaining() const { return qty - filled_qty; }
     bool is_fully_filled() const { return filled_qty >= qty; }
+
+    // Still live: may be cancelled, modified or matched again.
+    bool is_active() const {
+        return status == OrderStatus::PENDING || status == OrderStatus::PARTIAL;
+    }
+
+    // Occupies a slot in a price level queue. Market orders never rest, so an
+    // unsatisfied market order is active but not resting.
+    bool is_resting() const {
+        return is_active() && type == OrderType::LIMIT && remaining() > 0;
+    }
 
     std::string side_str() const { return side == OrderSide::BUY ? "BUY" : "SELL"; }
     std::string type_str() const { return type == OrderType::LIMIT ? "LIMIT" : "MARKET"; }

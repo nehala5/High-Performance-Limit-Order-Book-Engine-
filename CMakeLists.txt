@@ -8,6 +8,7 @@ add_library(orderbook
     src/order.cpp
     src/trade.cpp
     src/event.cpp
+    src/command.cpp
     src/order_book.cpp
 )
 

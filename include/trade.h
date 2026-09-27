@@ -4,6 +4,7 @@
 
 struct Trade {
     uint64_t  trade_id;
+    SeqNum    seq;
     OrderId   aggressor_id;
     OrderId   passive_id;
     OrderSide side;
@@ -11,3 +12,4 @@ struct Trade {
     Quantity  qty;
     Timestamp timestamp;
 };
+
