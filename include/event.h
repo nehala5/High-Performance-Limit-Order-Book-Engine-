@@ -54,7 +54,19 @@ struct TradeEvent {
     Trade trade;
 };
 
-using Event = std::variant<OrderAdded, OrderFilled, OrderCancelled, OrderModified, TradeEvent>;
+struct OrderRejected {
+    OrderId   id;
+    SeqNum    seq;
+    OrderSide side;
+    OrderType type;
+    Price     price;
+    Quantity  qty;
+    std::string reason;
+    Timestamp timestamp;
+};
+
+using Event = std::variant<OrderAdded, OrderFilled, OrderCancelled, OrderModified,
+                          OrderRejected, TradeEvent>;
 
 struct EventStream {
     std::vector<Event> events;
@@ -63,6 +75,7 @@ struct EventStream {
     void record(OrderFilled e)     { events.push_back(e); }
     void record(OrderCancelled e)  { events.push_back(e); }
     void record(OrderModified e)   { events.push_back(e); }
+    void record(OrderRejected e)   { events.push_back(e); }
     void record(TradeEvent e)      { events.push_back(e); }
 
     const std::vector<Event>& all() const { return events; }
@@ -107,6 +120,13 @@ private:
             os << " px " << std::fixed << std::setprecision(2) << e.old_price
                << "->" << e.new_price;
         os << (e.priority_lost ? " [requeued]" : " [priority kept]");
+    }
+    static void format(std::ostream& os, const OrderRejected& e) {
+        os << "OrderRejected seq=" << e.seq << " id=" << e.id
+           << " " << (e.side == OrderSide::BUY ? "BUY" : "SELL")
+           << " " << (e.type == OrderType::LIMIT ? "LIMIT" : "MARKET")
+           << " qty=" << e.qty
+           << " reason=\"" << e.reason << "\"";
     }
     static void format(std::ostream& os, const TradeEvent& e) {
         os << "Trade        seq=" << e.trade.seq << " id=" << e.trade.trade_id
